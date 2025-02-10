@@ -1,6 +1,5 @@
 package com.example.demo.service;
 
-import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Optional;
 
@@ -9,38 +8,31 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.demo.model.entities.Meal;
 import com.example.demo.model.entities.NutritionPlan;
+import com.example.demo.model.repositories.MealRepository;
 import com.example.demo.model.repositories.NutritionPlanRepository;
 
 @Service
 public class NutritionPlanService {
 
     private final NutritionPlanRepository nutritionPlanRepository;
+    private final MealRepository mealRepository;
 
-    public NutritionPlanService(NutritionPlanRepository nutritionPlanRepository) {
+    public NutritionPlanService(NutritionPlanRepository nutritionPlanRepository, MealRepository mealRepository) {
         this.nutritionPlanRepository = nutritionPlanRepository;
-    }
-
-    public Optional<NutritionPlan> getNutritionPlanById(Long id) {
-        return nutritionPlanRepository.findById(id);
+        this.mealRepository = mealRepository;
     }
 
     public Optional<NutritionPlan> getNutritionPlanByUserId(Long userId) {
-        String currentDate = LocalDate.now().toString();
+        System.out.println("Fetching Nutrition Plan for user ID: " + userId);
+        Optional<NutritionPlan> plan = nutritionPlanRepository.findByUserId(userId);
     
-        Optional<NutritionPlan> existingPlan = nutritionPlanRepository.findAll().stream()
-                .filter(plan -> plan.getUserId().equals(userId))
-                .findFirst();
-    
-        if (existingPlan.isPresent()) {
-            String storedId = String.valueOf(existingPlan.get().getId());
-            String storedDate = storedId.substring(3); // Datum extrahieren
-            if (!storedDate.equals(currentDate)) {
-                return Optional.of(createNewNutritionPlan(userId, (int) existingPlan.get().getTotalCalories())); // Neuer Plan für den Tag
-            }
-            return existingPlan;
+        if (plan.isEmpty()) {
+            System.out.println("No Nutrition Plan found for user ID: " + userId);
+        } else {
+            System.out.println("Nutrition Plan found: " + plan.get());
         }
     
-        return Optional.of(createNewNutritionPlan(userId, 2000)); // Falls kein Plan existiert, Standard-Kalorienziel 2000
+        return plan;
     }
 
     @Transactional
@@ -48,10 +40,8 @@ public class NutritionPlanService {
         Optional<NutritionPlan> planOpt = nutritionPlanRepository.findById(planId);
         if (planOpt.isPresent()) {
             NutritionPlan plan = planOpt.get();
-
-            // Update der Werte
             plan.updateWithMeal(meal);
-
+            mealRepository.save(meal);
             return nutritionPlanRepository.save(plan);
         }
         throw new IllegalArgumentException("Nutrition plan not found");
@@ -72,7 +62,7 @@ public class NutritionPlanService {
 
     private NutritionPlan createNewNutritionPlan(Long userId, int calorieGoal) {
         NutritionPlan newPlan = new NutritionPlan();
-        newPlan.setUserId(userId); // Setze die userId
+        newPlan.setUserId(userId);
         newPlan.setErnaehrungsziel("Erhalt");
         newPlan.setTotalProteins(0);
         newPlan.setTotalFats(0);
@@ -83,26 +73,23 @@ public class NutritionPlanService {
         newPlan.setTotalCalcium(0);
         newPlan.setTotalSodium(0);
         newPlan.setMeals(new HashSet<>());
-
-        // Setze die ID basierend auf der dreistelligen ID und dem aktuellen Datum
-        String currentDate = LocalDate.now().toString();
-        String planIdWithDate = String.format("%03d", userId % 1000) + currentDate;
-        newPlan.setId(Long.parseLong(planIdWithDate));
-
         return nutritionPlanRepository.save(newPlan);
     }
 
     @Transactional
     public void resetDailyMeals(Long userId) {
-        Optional<NutritionPlan> planOpt = nutritionPlanRepository.findAll().stream()
-                .filter(plan -> plan.getUserId().equals(userId))
-                .findFirst();
+        Optional<NutritionPlan> planOpt = nutritionPlanRepository.findByUserId(userId);
         if (planOpt.isPresent()) {
             NutritionPlan plan = planOpt.get();
-            plan.setMeals(new HashSet<>()); // Setze das Meal-Set auf leer
+            plan.setMeals(new HashSet<>());
             nutritionPlanRepository.save(plan);
         } else {
             throw new IllegalArgumentException("Nutrition plan not found");
         }
     }
+    public Optional<NutritionPlan> getNutritionPlanById(Long id) {
+        return nutritionPlanRepository.findById(id);
+    }
 }
+
+

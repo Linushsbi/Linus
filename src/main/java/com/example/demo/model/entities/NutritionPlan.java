@@ -27,16 +27,34 @@ public class NutritionPlan {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long userId; // Hinzugefügtes Feld
+    @Column(name = "user_id")
+    private Long userId;
 
+    @Column(name = "ernaehrungsziel")
     private String ernaehrungsziel;
+
+    @Column(name = "total_proteins")
     private double totalProteins;
+
+    @Column(name = "total_fats")
     private double totalFats;
+
+    @Column(name = "total_carbs")
     private double totalCarbs;
+
+    @Column(name = "total_calories")
     private double totalCalories;
+
+    @Column(name = "total_vitamind")
     private double totalVitaminD;
+
+    @Column(name = "total_vitaminc")
     private double totalVitaminC;
+
+    @Column(name = "total_calcium")
     private double totalCalcium;
+
+    @Column(name = "total_sodium")
     private double totalSodium;
 
     @ElementCollection
@@ -47,7 +65,7 @@ public class NutritionPlan {
     public void updateWithMeal(Meal meal) {
         this.totalCalories -= meal.getCalories();
         this.totalCarbs += meal.getCarbs();
-        this.totalFats += meal.getFat();
+        this.totalFats += meal.getFats();
         this.totalProteins += meal.getProtein();
         this.totalCalcium += meal.getCalcium();
         this.totalSodium += meal.getSodium();

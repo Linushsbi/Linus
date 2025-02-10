@@ -7,14 +7,15 @@ package com.example.demo.security;
 // Modified by: Delbrin Alazo
 // Description: AuthenticatedUser class for handling user authentication
 
-import com.example.demo.model.entities.User;
-import com.example.demo.model.repositories.UserRepository;
-import com.vaadin.flow.spring.security.AuthenticationContext;
 import java.util.Optional;
 
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.example.demo.model.entities.User;
+import com.example.demo.model.repositories.UserRepository;
+import com.vaadin.flow.spring.security.AuthenticationContext;
 
 @Component
 public class AuthenticatedUser {

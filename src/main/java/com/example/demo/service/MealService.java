@@ -1,11 +1,11 @@
 package com.example.demo.service;
 
-import org.springframework.stereotype.Service;
-import com.example.demo.model.repositories.MealRepository;
-import com.example.demo.model.entities.Meal;
-
-
 import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.example.demo.model.entities.Meal;
+import com.example.demo.model.repositories.MealRepository;
 
 @Service
 public class MealService {
@@ -21,7 +21,7 @@ public class MealService {
     }
 
     public List<Meal> getMealsForUser(Long userId) {
-        return mealRepository.findByUser_Id(userId);
+        return mealRepository.findByUserId(userId);
     }
 
     public void deleteMeal(Long mealId) {
@@ -33,4 +33,8 @@ public class MealService {
         int totalCaloriesConsumed = meals.stream().mapToInt(Meal::getCalories).sum();
         return dailyCalorieGoal - totalCaloriesConsumed;
     }
+    public List<Meal> getAllMeals() {
+        return mealRepository.findAll();
+    }
+    
 }

@@ -3,8 +3,6 @@ package com.example.demo.views;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.client.RestTemplate;
 
 import com.example.demo.model.entities.Meal;
@@ -60,7 +58,7 @@ public class NutritionPlanView extends VerticalLayout {
         mealGrid.addColumn(Meal::getName).setHeader("Meal Name").setSortable(true);
         mealGrid.addColumn(Meal::getGrams).setHeader("Weight (g)");
         mealGrid.addColumn(Meal::getCarbs).setHeader("Carbs (g)");
-        mealGrid.addColumn(Meal::getFat).setHeader("Fats (g)");
+        mealGrid.addColumn(Meal::getFats).setHeader("Fats (g)");
         mealGrid.addColumn(Meal::getProtein).setHeader("Proteins (g)");
         mealGrid.addColumn(Meal::getCalories).setHeader("Calories (kcal)");
         mealGrid.addColumn(Meal::getCalcium).setHeader("Calcium (mg)");
@@ -70,13 +68,31 @@ public class NutritionPlanView extends VerticalLayout {
         mealGrid.addComponentColumn(this::createDeleteButton).setHeader("Actions");
 
         add(header, calorieCounter, buttonLayout, mealGrid);
-        initializeNutritionPlan();
         loadNutritionPlan();
         loadMeals();
     }
 
     private String getCalorieSummary() {
         return "Remaining Calories: " + remainingCalories + " kcal";
+    }
+
+    private void loadNutritionPlan() {
+        try {
+            NutritionPlan plan = restTemplate.getForObject(baseUrl + "/user/{userId}", NutritionPlan.class, getCurrentUserId());
+            if (plan != null) {
+                dailyCalorieGoal = (int) plan.getTotalCalories(); // Setze das Ziel
+                remainingCalories = calculateRemainingCalories(plan); // Berechne verbleibende Kalorien
+                updateCalorieCounter();
+            } else {
+                Notification.show("No Nutrition Plan found!", 3000, Notification.Position.MIDDLE);
+            }
+        } catch (Exception e) {
+            Notification.show("Error loading nutrition plan: " + e.getMessage(), 5000, Notification.Position.MIDDLE);
+        }
+    }
+
+    private int calculateRemainingCalories(NutritionPlan plan) {
+        return dailyCalorieGoal - plan.getMeals().stream().mapToInt(Meal::getCalories).sum();
     }
 
     private void loadMeals() {
@@ -93,22 +109,8 @@ public class NutritionPlanView extends VerticalLayout {
         calorieCounter.setText(getCalorieSummary());
     }
 
-    private Long getCurrentNutritionPlanId() {
-        try {
-            NutritionPlan plan = restTemplate.getForObject(baseUrl + "/user/{userId}", NutritionPlan.class, getCurrentUserId());
-            return plan != null ? plan.getId() : null;
-        } catch (Exception e) {
-            Notification.show("Error retrieving nutrition plan: " + e.getMessage(), 5000, Notification.Position.MIDDLE);
-            return null;
-        }
-    }
-
     private Long getCurrentUserId() {
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (principal instanceof UserDetails) {
-            return 1L; // Hier kann die Benutzer-ID aus der Datenbank geladen werden
-        }
-        return null;
+        return 1L; // Dummy user ID, kann später angepasst werden.
     }
 
     private void openGoalPopup() {
@@ -117,7 +119,6 @@ public class NutritionPlanView extends VerticalLayout {
         NumberField calorieField = new NumberField("Kalorienziel");
         Button saveButton = new Button("Speichern", event -> {
             dailyCalorieGoal = calorieField.getValue().intValue();
-            saveCalorieGoal(dailyCalorieGoal);
             updateCalorieCounter();
             goalDialog.close();
         });
@@ -127,54 +128,10 @@ public class NutritionPlanView extends VerticalLayout {
 
     private Button createDeleteButton(Meal meal) {
         return new Button("Delete", event -> {
-            restTemplate.delete(baseUrl + "/" + meal.getId());
+            restTemplate.delete(baseUrl + "/meals/" + meal.getId());
             loadMeals();
+            loadNutritionPlan(); // Aktualisiere den Kalorienzähler nach dem Löschen
         });
-    }
-
-    private void saveMealToDatabase(Meal meal) {
-        try {
-            restTemplate.postForObject(baseUrl + "/meals", meal, Meal.class);
-            Notification.show("Meal saved successfully!", 3000, Notification.Position.MIDDLE);
-            loadMeals(); // Nach dem Speichern die Mahlzeiten neu laden
-        } catch (Exception e) {
-            Notification.show("Error saving meal: " + e.getMessage(), 5000, Notification.Position.MIDDLE);
-        }
-    }
-
-    private void resetDailyMeals(Long userId) {
-        restTemplate.delete(baseUrl + "/user/" + userId + "/reset-meals");
-    }
-
-    private void initializeNutritionPlan() {
-        Long userId = getCurrentUserId();
-        String currentDate = java.time.LocalDate.now().toString();
-        String planIdWithDate = restTemplate.getForObject(baseUrl + "/user/" + userId + "/date", String.class);
-
-        if (planIdWithDate == null || !planIdWithDate.substring(3).equals(currentDate)) {
-            resetDailyMeals(userId);
-            String newPlanIdWithDate = String.format("%03d", userId % 1000) + currentDate;
-            restTemplate.postForObject(baseUrl + "/user/" + userId + "/set-date", newPlanIdWithDate, Void.class);
-        }
-    }
-
-    private void loadNutritionPlan() {
-        try {
-            NutritionPlan plan = restTemplate.getForObject(baseUrl + "/user/{userId}", NutritionPlan.class, getCurrentUserId());
-            if (plan != null) {
-                dailyCalorieGoal = (int) plan.getTotalCalories();
-                updateCalorieCounter();
-            }
-        } catch (Exception e) {
-            Notification.show("Error loading nutrition plan: " + e.getMessage(), 5000, Notification.Position.MIDDLE);
-        }
-    }
-
-    private void saveCalorieGoal(int calorieGoal) {
-        Long nutritionPlanId = getCurrentNutritionPlanId();
-        if (nutritionPlanId != null) {
-            restTemplate.postForObject(baseUrl + "/" + nutritionPlanId + "/set-goal", calorieGoal, Void.class);
-        }
     }
 
     private void openAddFoodDialog() {
@@ -193,15 +150,15 @@ public class NutritionPlanView extends VerticalLayout {
         NumberField vitaminDField = new NumberField("Vitamin D (IU)");
 
         Button saveButton = new Button("Save", event -> {
-            if (foodNameField.isEmpty() || weightField.isEmpty() || carbsField.isEmpty() || 
-                fatsField.isEmpty() || proteinsField.isEmpty() || caloriesField.isEmpty()) {
+            if (foodNameField.isEmpty() || weightField.isEmpty() || carbsField.isEmpty() ||
+                    fatsField.isEmpty() || proteinsField.isEmpty() || caloriesField.isEmpty()) {
                 Notification.show("All fields are required!", 3000, Notification.Position.MIDDLE);
             } else {
                 Meal meal = new Meal();
                 meal.setName(foodNameField.getValue());
                 meal.setGrams(weightField.getValue().intValue());
                 meal.setCarbs(carbsField.getValue().intValue());
-                meal.setFat(fatsField.getValue().intValue());
+                meal.setFats(fatsField.getValue().intValue());
                 meal.setProtein(proteinsField.getValue().intValue());
                 meal.setCalories(caloriesField.getValue().intValue());
                 meal.setCalcium(calciumField.getValue().intValue());
@@ -209,13 +166,15 @@ public class NutritionPlanView extends VerticalLayout {
                 meal.setVitaminC(vitaminCField.getValue().intValue());
                 meal.setVitaminD(vitaminDField.getValue().intValue());
 
-                saveMealToDatabase(meal);
+                restTemplate.postForObject(baseUrl + "/meals", meal, Meal.class);
                 foodDialog.close();
+                loadMeals();
+                loadNutritionPlan(); // Aktualisiere den Kalorienzähler nach dem Hinzufügen
             }
         });
 
-        foodDialog.add(foodNameField, weightField, carbsField, fatsField, proteinsField, caloriesField, 
-                       calciumField, sodiumField, vitaminCField, vitaminDField, saveButton);
+        foodDialog.add(foodNameField, weightField, carbsField, fatsField, proteinsField, caloriesField,
+                calciumField, sodiumField, vitaminCField, vitaminDField, saveButton);
         foodDialog.open();
     }
 }

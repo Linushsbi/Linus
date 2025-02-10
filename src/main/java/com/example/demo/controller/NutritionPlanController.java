@@ -27,40 +27,61 @@ public class NutritionPlanController {
     }
 
     @GetMapping(value = "/{planId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<NutritionPlan> getNutritionPlan(@PathVariable Long planId) {
-        Optional<NutritionPlan> plan = nutritionPlanService.getNutritionPlanById(planId);
-        return plan.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<NutritionPlan> getNutritionPlan(@PathVariable String planId) {
+        try {
+            Long parsedPlanId = Long.valueOf(planId); // Konvertiert den String in Long
+            Optional<NutritionPlan> plan = nutritionPlanService.getNutritionPlanById(parsedPlanId);
+            return plan.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().body(null); // Ungültiges Format
+        }
     }
 
     @PostMapping(value = "/{planId}/add-meal", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<NutritionPlan> addMealToPlan(@PathVariable Long planId, @RequestBody Meal meal) {
+    public ResponseEntity<NutritionPlan> addMealToPlan(@PathVariable String planId, @RequestBody Meal meal) {
         try {
-            NutritionPlan updatedPlan = nutritionPlanService.addMealToPlan(planId, meal);
+            Long parsedPlanId = Long.valueOf(planId);
+            NutritionPlan updatedPlan = nutritionPlanService.addMealToPlan(parsedPlanId, meal);
             return ResponseEntity.ok(updatedPlan);
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().body(null);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
         }
     }
 
     @PostMapping(value = "/{planId}/set-goal", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Void> setCalorieGoal(@PathVariable Long planId, @RequestBody Integer calorieGoal) {
+    public ResponseEntity<Void> setCalorieGoal(@PathVariable String planId, @RequestBody Integer calorieGoal) {
         try {
-            nutritionPlanService.setCalorieGoal(planId, calorieGoal);
+            Long parsedPlanId = Long.valueOf(planId);
+            nutritionPlanService.setCalorieGoal(parsedPlanId, calorieGoal);
             return ResponseEntity.ok().build();
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
         }
     }
 
     @DeleteMapping(value = "/user/{userId}/reset-meals", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Void> resetDailyMeals(@PathVariable Long userId) {
-        nutritionPlanService.resetDailyMeals(userId);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Void> resetDailyMeals(@PathVariable String userId) {
+        try {
+            Long parsedUserId = Long.valueOf(userId);
+            nutritionPlanService.resetDailyMeals(parsedUserId);
+            return ResponseEntity.ok().build();
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @GetMapping(value = "/user/{userId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<NutritionPlan> getNutritionPlanByUserId(@PathVariable Long userId) {
-        Optional<NutritionPlan> plan = nutritionPlanService.getNutritionPlanByUserId(userId);
-        return plan.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<NutritionPlan> getNutritionPlanByUserId(@PathVariable String userId) {
+        try {
+            Long parsedUserId = Long.valueOf(userId);
+            Optional<NutritionPlan> plan = nutritionPlanService.getNutritionPlanByUserId(parsedUserId);
+            return plan.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 }

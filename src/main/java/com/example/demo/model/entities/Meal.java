@@ -1,85 +1,159 @@
 package com.example.demo.model.entities;
-
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
 
 @Entity
 @Table(name = "meals")
-@Data
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Meal {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotBlank
+    @Column(name = "name")
     private String name;
 
     @NotNull
+    @Column(name = "calories")
     private Integer calories;
 
     @NotNull
+    @Column(name = "proteins")
     private Integer protein;
 
     @NotNull
+    @Column(name = "carbs")
     private Integer carbs;
 
     @NotNull
-    private Integer fat;
+    @Column(name = "fats")
+    private Integer fats;
 
     @NotNull
-    private Integer grams; // Gramm-Anzeige für das Essen
+    @Column(name = "weight")
+    private Integer grams; // Umbenannt für den Code
 
     @NotNull
+    @Column(name = "calcium")
     private Integer calcium;
 
     @NotNull
+    @Column(name = "sodium")
     private Integer sodium;
 
     @NotNull
+    @Column(name = "vitamin_c")
     private Integer vitaminC;
 
     @NotNull
+    @Column(name = "vitamin_d")
     private Integer vitaminD;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false) 
-    @JsonBackReference
-    private User user; // Verweis auf den Benutzer
+    @NotNull
+    @Column(name = "user_id")
+    private Long userId;
 
-    // Standard-Konstruktor
-    public Meal() {}
+    // Getter und Setter
+    public Long getId() {
+        return id;
+    }
 
-    // Parameterisierter Konstruktor für einfachere Erstellung
-    public Meal(String name, int grams, int carbs, int fat, int protein, int calories, int calcium, int sodium, int vitaminC, int vitaminD, User user) {
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
         this.name = name;
-        this.grams = grams;
-        this.carbs = carbs;
-        this.fat = fat;
-        this.protein = protein;
+    }
+
+    public Integer getCalories() {
+        return calories;
+    }
+
+    public void setCalories(Integer calories) {
         this.calories = calories;
+    }
+
+    public Integer getProtein() {
+        return protein;
+    }
+
+    public void setProtein(Integer protein) {
+        this.protein = protein;
+    }
+
+    public Integer getCarbs() {
+        return carbs;
+    }
+
+    public void setCarbs(Integer carbs) {
+        this.carbs = carbs;
+    }
+
+    public Integer getFats() {
+        return fats;
+    }
+
+    public void setFats(Integer fats) {
+        this.fats = fats;
+    }
+
+    public Integer getGrams() {
+        return grams;
+    }
+
+    public void setGrams(Integer grams) {
+        this.grams = grams;
+    }
+
+    public Integer getCalcium() {
+        return calcium;
+    }
+
+    public void setCalcium(Integer calcium) {
         this.calcium = calcium;
+    }
+
+    public Integer getSodium() {
+        return sodium;
+    }
+
+    public void setSodium(Integer sodium) {
         this.sodium = sodium;
+    }
+
+    public Integer getVitaminC() {
+        return vitaminC;
+    }
+
+    public void setVitaminC(Integer vitaminC) {
         this.vitaminC = vitaminC;
+    }
+
+    public Integer getVitaminD() {
+        return vitaminD;
+    }
+
+    public void setVitaminD(Integer vitaminD) {
         this.vitaminD = vitaminD;
-        this.user = user;
+    }
+
+    public Long getUserId() {
+        return userId;
     }
 
     public void setUserId(Long userId) {
-        if (this.user == null) {
-            this.user = new User();
-        }
-        this.user.setId(userId);
+        this.userId = userId;
     }
 }

@@ -28,34 +28,70 @@ public class MealController {
         System.out.println("MealController gestartet");
     }
 
+    // POST /api/meals
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Meal> addMeal(@RequestBody Meal meal) {
-        Meal savedMeal = mealService.saveMeal(meal);
-        return ResponseEntity.ok(savedMeal);
+        try {
+            Meal savedMeal = mealService.saveMeal(meal);
+            return ResponseEntity.ok(savedMeal);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build(); // Fehler bei der Verarbeitung
+        }
     }
 
+    // GET /api/meals/{userId}
     @GetMapping(value = "/{userId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<Meal>> getMeals(@PathVariable Long userId) {
-        List<Meal> meals = mealService.getMealsForUser(userId);
-        
-        // Stelle sicher, dass eine leere Liste statt null zurückgegeben wird
-        if (meals == null) {
-            meals = Collections.emptyList();
+    public ResponseEntity<List<Meal>> getMeals(@PathVariable String userId) {
+        try {
+            Long parsedUserId = Long.valueOf(userId);
+            List<Meal> meals = mealService.getMealsForUser(parsedUserId);
+
+            // Rückgabe einer leeren Liste statt null
+            if (meals == null) {
+                meals = Collections.emptyList();
+            }
+
+            System.out.println("Fetched meals: " + meals); // Debug-Ausgabe
+            return ResponseEntity.ok(meals);
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().build(); // Fehlerhafte Eingabe
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build(); // Allgemeiner Fehler
         }
-        
-        System.out.println("Fetched meals: " + meals); // Debug-Ausgabe
+    }
+
+    // GET /api/meals
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<Meal>> getAllMeals() {
+        List<Meal> meals = mealService.getAllMeals();
         return ResponseEntity.ok(meals);
     }
 
+    // DELETE /api/meals/{mealId}
     @DeleteMapping("/{mealId}")
-    public ResponseEntity<Void> deleteMeal(@PathVariable Long mealId) {
-        mealService.deleteMeal(mealId);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Void> deleteMeal(@PathVariable String mealId) {
+        try {
+            Long parsedMealId = Long.valueOf(mealId);
+            mealService.deleteMeal(parsedMealId);
+            return ResponseEntity.noContent().build();
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
+    // GET /api/meals/remaining-calories/{userId}
     @GetMapping("/remaining-calories/{userId}")
     public ResponseEntity<Integer> getRemainingCalories(
-            @PathVariable Long userId, @RequestParam Integer dailyCalorieGoal) {
-        return ResponseEntity.ok(mealService.calculateRemainingCalories(userId, dailyCalorieGoal));
+            @PathVariable String userId, @RequestParam Integer dailyCalorieGoal) {
+        try {
+            Long parsedUserId = Long.valueOf(userId);
+            return ResponseEntity.ok(mealService.calculateRemainingCalories(parsedUserId, dailyCalorieGoal));
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }

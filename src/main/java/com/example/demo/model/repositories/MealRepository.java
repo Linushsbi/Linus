@@ -9,5 +9,5 @@ import com.example.demo.model.entities.Meal;
 
 @Repository
 public interface MealRepository extends JpaRepository<Meal, Long> {
-    List<Meal> findByUser_Id(Long userId); // Findet Mahlzeiten für einen bestimmten Benutzer
+    List<Meal> findByUserId(Long userId); // Findet Mahlzeiten für einen bestimmten Benutzer
 }
